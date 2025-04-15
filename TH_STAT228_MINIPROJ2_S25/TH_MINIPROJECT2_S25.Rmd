@@ -1,0 +1,265 @@
+---
+title: "𓆙 Let's Wrangle Some MF Snakes! 𓆙"
+author: "Theo Hatfield"
+date: "2025-04-11"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+devtools::install_github("rstudio/learnr")
+library(shiny)
+library(rsconnect)
+library(tidyverse)
+library(learnr)
+library(tidyr)
+library(ggplot2)
+library(stringr)
+library(dplyr)
+library(readr)
+knitr::opts_chunk$set(echo = TRUE)
+LD50_of_Venomous_Snakes_snakeDB <- read_csv("LD50 of Venomous Snakes  snakeDB.csv", col_types = cols(`Dosage mg/kg` = col_number()))
+snake_data <- LD50_of_Venomous_Snakes_snakeDB
+dir.create("data",  showWarnings = FALSE)
+write_csv(snake_data, "data/snake_data.csv")
+```
+
+## What is wrangling?
+
+Data is often not collected or provided in a form that is easy to analyze. The columns can be disorganized, there can be unnecessary information or missing values, and so much more. This is why we wrangle our data sets. Wrangling is the process we use to get this data into a usable form for modeling, visualization, and summarizing. Within the tidyverse there various functions we use to rearrange our data frames into a usable format including:
+
+-   summarize()
+
+-   group_by()
+
+-   mutate()
+
+-   filter()
+
+-   select()
+
+-   arrange()
+
+The process of wrangling is incredibly helpful in manipulating data, and can make a huge difference in the extent to which you are able to use a given data set!
+
+## Wrangling is an Important Skill!
+
+HOWEVER, if you don't know where to start wrangling data can be frustrating...
+
+![](images/snakeplane.gif)
+
+To understand the basics of wrangling data we will be wrangling ourselves some snakes! Not actually... we will be exploring the process of wrangling using a data set obtained from [snake Data Base](https://snakedb.org/pages/ld50.php). The LD50 data was most recently updated in May of 2024 and provides the median lethal dose (LD50) across various snake species.
+
+Columns in the data frame are as follows
+
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+| Column Name    | Column Description                                                                                                                                 | Data Type |
++================+====================================================================================================================================================+===========+
+| Family         | Taxonomic family the snake belongs to                                                                                                              | character |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+| Binomial       | Species name in binomial nomenclature format (*Genus species*)                                                                                     | character |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+| Method         | How potency was measured                                                                                                                           | character |
+|                |                                                                                                                                                    |           |
+|                | -   LD -\> Unspecified Lethal Dose                                                                                                                 |           |
+|                |                                                                                                                                                    |           |
+|                | -   LDLo -\> Lowest Lethal Dose                                                                                                                    |           |
+|                |                                                                                                                                                    |           |
+|                | -   LD25 -\> Lethal dose (LD25) is the amount of an injected substance that kills 25 percent of a test sample.                                     |           |
+|                |                                                                                                                                                    |           |
+|                | -   LD50 -\> Lethal dose (LD50) is the amount of an injected substance that kills 50 percent of a test sample.                                     |           |
+|                |                                                                                                                                                    |           |
+|                | -   LD100 -\> Lethal dose (LD100) is the amount of an injected substance that kills 100 percent of a test sample.                                  |           |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+| Injection      | Mode of venom administration                                                                                                                       | character |
+|                |                                                                                                                                                    |           |
+|                | -   IM -\> Intramuscular is the injection directly into a muscle.                                                                                  |           |
+|                |                                                                                                                                                    |           |
+|                | -   ICL -\> Intracelomatic injection. An injection method used with bees.                                                                          |           |
+|                |                                                                                                                                                    |           |
+|                | -   IC -\> Intra-cerebral is the injection into brain tissue.                                                                                      |           |
+|                |                                                                                                                                                    |           |
+|                | -   IN -\> Ingestion means that the test animal eats the substance.                                                                                |           |
+|                |                                                                                                                                                    |           |
+|                | -   IP -\> Intraperitoneal is an injection into the body cavity.                                                                                   |           |
+|                |                                                                                                                                                    |           |
+|                | -   IV -\> Intravenous is the injection into a blood vessel.                                                                                       |           |
+|                |                                                                                                                                                    |           |
+|                | -   PA -\> Parenteral is any injection that is not using the enteric tract. Parenteral injections of snake venom are for example SC, IP, IM or IV. |           |
+|                |                                                                                                                                                    |           |
+|                | -   SC -\> Subcutaneous injection is the insertion of venom beneath the skin.                                                                      |           |
+|                |                                                                                                                                                    |           |
+|                | -   unknown                                                                                                                                        |           |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+| Dosage (mg/kg) | Amount of venom administered.                                                                                                                      | numerical |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+| Tested on      | Organism used in determining venom lethality.                                                                                                      | character |
++----------------+----------------------------------------------------------------------------------------------------------------------------------------------------+-----------+
+
+While this context is not wildly important for our actual task at hand, LD50 represents the dose of venom required to kill 50% of a population in a given time. This data set provides a simple starting point to learn the art of wrangling (data not snakes thank god)!
+
+## 𓆙 Starting off Simply 𓆙
+
+This data set is public which is super cool! However it can also present issues as some people who contribute to the information are not as specific as we would like them to be. To start off we will take out any information that might not be useful to us. The field standard is to use LD50 to measure the potency of a venom so we want to remove any rows that do not use this as their measure of lethality. To do this we will make a new data frame named LD50 from the "snake_data" data frame.
+
+```{r}
+LD50 <- snake_data |>
+  filter(Method == "LD50") 
+#the filter function will allow   you to select rows only containing specific values! In this case we extracted just the rows whose method of measurement was the LD50.
+LD50
+```
+
+```{r include=FALSE}
+write_csv(LD50, "data/LD50.csv")
+LD50 <- read_csv("data/LD50.csv")
+```
+
+Great! Now we have a good example of how to use the filter function. It's your turn to practice. If we want to compare the lethality of snakes we should compare the LD50 between tests on the same species. Unfortunately the name of the "Tested on" is not ideal so we will need to change that before doing that. Here is some code to get started but use the filter() function to now select only for studies done on mice with known modes of venom administration (This second half will require the use of != instead of ==). This will be saved to a new data frame named "LD50_mouse".
+
+```{r create_dataframe, exercise = TRUE}
+LD50 <- read_csv("data/LD50.csv")
+LD50_mouse <- LD50 |>
+  rename(tested_on = `Tested on`)|>
+  # The rename function allows you to assign a new name to an existing column
+  filter() 
+print(LD50_mouse)
+```
+
+```{r include=FALSE}
+LD50_mouse <- LD50 |>
+  rename(tested_on = `Tested on`)|>
+  filter(tested_on == "Mouse", Injection != "unknown") 
+write_csv(LD50_mouse, "data/LD50_mouse.csv")
+```
+
+Now that we have made a new data frame with just the tested groups we want, we can start working towards seeing some real trends!
+
+## 𓆙 Getting More Specific 𓆙
+
+Let's take a closer look at our snakes! We can alphabetize species names by using the arrange() function. Fill in the following code to organize our frame:
+
+```{r include=FALSE}
+write_csv(LD50_mouse, "data/LD50_mouse.csv")
+LD50_mouse <- read_csv("data/LD50_mouse.csv")
+```
+
+```{r alphabetize, exercise = TRUE}
+LD50_mouse <- read_csv("data/LD50_mouse.csv")
+LD50_mouse |>
+  arrange(desc("*TYPE IN VARIABLE YOU WANT TO ORDER*"))
+#the desc function organizes in decending order. By ommitting this R will automatically organize in ascending order. DO NOT KEEP QUOTES AROUND VARIABLE NAME
+```
+
+As we just saw some species like *Walterinnesia aegyptia* have more than one entry in this data set. We don't want to count a single species more than once so we can manipulate our data frame to only show unique values for the column "Binomial". A straight forward way to do this is to use the distinct() function. For a specified column, this function will return only unique results. In our case it will create a new LD50_mouse data frame that contains one entry for each species.
+
+```{r distinct_dataframe, exercise = TRUE}
+LD50_mouse <- read_csv("data/LD50_mouse.csv")
+LD50_mouse <- LD50_mouse |>
+  arrange(desc(Binomial))|>
+  distinct(Binomial, .keep_all = FALSE)
+print(LD50_mouse)
+#run the code and then set the .keep_all variable to TRUE, note the differences between the data frames produced
+```
+
+When using a function like distinct() it is important to set .keep_all to your desired value. Otherwise you may drop parts of the data frame you had intended to keep
+
+```{r include=FALSE}
+write_csv(LD50_mouse, "data/LD50_mouse.csv")
+```
+
+## 𓆙 Let's Get Graphic With It 𓆙
+
+```{r include=FALSE}
+write_csv(LD50_mouse, "data/LD50_mouse.csv")
+LD50_mouse <- read_csv("data/LD50_mouse.csv")
+```
+
+Alright! Now that we have a specific data we can use this to draw some conclusions about our wrangled snakes. The question we want the answer to is how does the venom lethality differ between the taxonomic families of snake. We will do this by creating a histogram of the LD50 dosages colored by family! Luckily we won't need all of the data for this, so we can extract only our columns of interest from the LD50_mouse data frame. This is done using the select() function and in the pipeline you simply have to list out the columns you want to keep in your abbreviated data frame! HINT: you may want to rename "Dosage mg/kg" to something more user friendly (like "dose") in coding!
+
+```{r abbreviate, exercise = TRUE}
+LD50_mouse <- read_csv("data/LD50_mouse.csv")
+shorter_LD50_mouse <- LD50_mouse|>
+  #select the columns you will need for this. These are Family and Dosage mg/kg
+  select()
+```
+
+```{r include=FALSE}
+LD50_mouse <- read_csv("data/LD50_mouse.csv")
+shorter_LD50_mouse <- LD50_mouse|>
+  rename(dose = "Dosage mg/kg")|>
+  select(dose,Family)
+write_csv(shorter_LD50_mouse, "data/shorter_LD50_mouse")
+shorter_LD50_mouse <- read_csv("data/shorter_LD50_mouse")
+```
+
+Great! Now we have an abbreviated table we can use to create a bar plot comparing the families. Use the code outline below to create a plot with appropriate labels:
+
+```{r make_a_graph, exercise = TRUE}
+shorter_LD50_mouse <- read_csv("data/shorter_LD50_mouse")
+ggplot(
+  data = shorter_LD50_mouse, 
+  mapping = aes(
+    x = dose, 
+    color = Family, 
+    fill = Family)
+  ) + 
+  geom_histogram(
+    position = "dodge",
+    binwidth = 20
+    ) +
+  labs(
+    title = "",
+    subtitle = "",
+    x = "",
+    y = ""
+  )
+#add a title, subtitle, as well as appropriate labels to each axis!
+```
+
+You've made it through the basics of wrangling (yippee)! Check the next page for the final graph solution and some final thoughts!
+
+## That's some good wranglin'!!
+
+You should have gotten a graph like this!
+```{r}
+shorter_LD50_mouse <- read_csv("data/shorter_LD50_mouse")
+ggplot(
+  data = shorter_LD50_mouse, 
+  mapping = aes(
+    x = dose, 
+    color = Family, 
+    fill = Family)
+  ) + 
+  geom_histogram(
+    position = "dodge",
+    binwidth = 20
+    ) +
+  labs(
+    title = "LD50 Dose By Family",
+    subtitle = "Histogram of Snake Venom Potency in Mouse Separated by Taxonomic Family",
+    x = "LD50 Dose (mg/kg)",
+    y = "Count"
+  )
+```
+
+Overall we see that most snakes have an LD50 of under 25. Given the lower an LD50 value is the more lethal the venom is we can see that the Viperidae family appears to have the least potent venom...
+
+I wouldn't go around testing it though!
+
+Nice job! By now you should have a basic understanding of the following wrangling functions in the dyplr package:
+
+-   filter()
+
+-   select()
+
+-   distinct()
+
+-   arrange()
+
+-   rename()
+
+As you continue in your journey through the tidyverse you will discover that many of the functions in the dyplr package act similarly. Though you can always visit back here should you need a refresher on the basics!
+
+CITATION:
+Steinhoff, S. (2024). LD50 of Venomous Snakes – Minimum Dosage Records (LD50). snakedb. https://snakedb.org/pages/ld50.php
+
